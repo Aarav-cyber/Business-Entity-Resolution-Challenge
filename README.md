@@ -131,6 +131,9 @@ print(df_clean[["entity_id", "business_name_clean", "business_address_clean", "l
 # 1. Run Blocking (Stage B)
 python src/blocking/run_blocking.py --data-dir dataset/test --out output/candidate_pairs.tsv
 
+# (Optional Diagnostic) Evaluate Blocking Recall Ceiling against Ground Truth
+python src/blocking/evaluate_blocking.py --candidates output/candidate_pairs.tsv --ground-truth dataset/train/train_ground_truth.tsv
+
 # 2. Run Inference (Stage C)
 python src/model/infer.py --data-dir dataset/test --candidates output/candidate_pairs.tsv --out output/matching_results.tsv
 

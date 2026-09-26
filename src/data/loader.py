@@ -97,3 +97,34 @@ def load_ground_truth(path: str | Path) -> pd.DataFrame:
         )
 
     return df[GROUND_TRUTH_COLUMNS].fillna("")
+
+
+def load_all_sources(data_dir: str | Path) -> dict[str, pd.DataFrame]:
+    """
+    Loads source1, source2, and source3 dataset files from a directory.
+    Supports filenames like source1.tsv, train_source1.tsv, test_source1.tsv.
+    """
+    data_dir = Path(data_dir)
+    if not data_dir.exists():
+        raise FileNotFoundError(f"Data directory not found: {data_dir}")
+
+    sources = {}
+    for source_key in ["source1", "source2", "source3"]:
+        possible_names = [
+            f"{source_key}.tsv",
+            f"train_{source_key}.tsv",
+            f"test_{source_key}.tsv",
+        ]
+        found_path = None
+        for name in possible_names:
+            path = data_dir / name
+            if path.exists():
+                found_path = path
+                break
+
+        if found_path:
+            sources[source_key] = load_source(found_path)
+        else:
+            raise FileNotFoundError(f"Could not find TSV for {source_key} in {data_dir}")
+
+    return sources
