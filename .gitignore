@@ -1,0 +1,12 @@
+dataset/
+output/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+.env
+
+
+Work_split.md
+Work_split2.md
+ChatGPT-Dropbox dataset training-20260926-1758.md
