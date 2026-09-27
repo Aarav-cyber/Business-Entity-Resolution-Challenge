@@ -13,7 +13,7 @@ Usage:
 
 import argparse
 import sys
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 import numpy as np
 import pandas as pd
 
@@ -51,7 +51,7 @@ def parse_candidates(cand_path: str) -> Dict[str, Set[str]]:
 def evaluate_blocking(
     candidates_path: str,
     ground_truth_path: str,
-    max_miss_samples: int = 10,
+    max_miss_samples: int = 15,
 ):
     print("=== Stage B: Evaluating Blocking Recall Ceiling & Quality ===")
     print(f"Candidates File:    {candidates_path}")
@@ -101,31 +101,35 @@ def evaluate_blocking(
             if len(missed_pairs) < max_miss_samples:
                 missed_pairs.append((s1_id, missed_cand))
 
-    recall_ceiling = (found_true_matches / total_true_matches * 100.0) if total_true_matches > 0 else 100.0
-    full_cov_pct = (full_coverage_s1 / total_s1_with_matches * 100.0) if total_s1_with_matches > 0 else 100.0
-    partial_cov_pct = (partial_coverage_s1 / total_s1_with_matches * 100.0) if total_s1_with_matches > 0 else 100.0
+    pair_recall = (found_true_matches / total_true_matches * 100.0) if total_true_matches > 0 else 100.0
+    entity_coverage = (partial_coverage_s1 / total_s1_with_matches * 100.0) if total_s1_with_matches > 0 else 100.0
+    full_entity_coverage = (full_coverage_s1 / total_s1_with_matches * 100.0) if total_s1_with_matches > 0 else 100.0
 
     counts = np.array(candidate_counts)
+    zero_cands = int(np.sum(counts == 0))
+    zero_cands_pct = (zero_cands / len(counts) * 100.0) if len(counts) > 0 else 0.0
 
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 65)
     print("STAGE B RECALL & COVERAGE REPORT:")
-    print("=" * 60)
-    print(f"Evaluated S1 Entities:     {len(eval_s1_ids):,}")
-    print(f"S1 Entities with Matches:  {total_s1_with_matches:,}")
-    print(f"Total True Matches:        {total_true_matches:,}")
-    print(f"Found True Matches:        {found_true_matches:,}")
-    print(f"RECALL CEILING:            {recall_ceiling:.3f}%")
-    print(f"Full Entity Coverage:      {full_cov_pct:.2f}% (100% matches found)")
-    print(f"Partial Entity Coverage:   {partial_cov_pct:.2f}% (>=1 match found)")
-    print("-" * 60)
+    print("=" * 65)
+    print(f"Evaluated S1 Entities:       {len(eval_s1_ids):,}")
+    print(f"S1 Entities with Matches:    {total_s1_with_matches:,}")
+    print(f"Total True Match Pairs:      {total_true_matches:,}")
+    print(f"Found True Match Pairs:      {found_true_matches:,}")
+    print("-" * 65)
+    print(f"PAIR RECALL:                 {pair_recall:.3f}% (found / total true pairs)")
+    print(f"ENTITY COVERAGE:             {entity_coverage:.3f}% (>=1 true match found)")
+    print(f"FULL ENTITY COVERAGE:        {full_entity_coverage:.3f}% (100% true matches found)")
+    print("-" * 65)
     print("CANDIDATE DISTRIBUTION:")
-    print(f"Average Candidate Count:   {np.mean(counts):.2f}")
-    print(f"Median Candidate Count:    {np.median(counts):.1f}")
-    print(f"P90 Candidate Count:       {np.percentile(counts, 90):.1f}")
-    print(f"P95 Candidate Count:       {np.percentile(counts, 95):.1f}")
-    print(f"P99 Candidate Count:       {np.percentile(counts, 99):.1f}")
-    print(f"Max Candidate Count:       {np.max(counts)}")
-    print("=" * 60 + "\n")
+    print(f"Average Candidate Count:     {np.mean(counts):.2f}")
+    print(f"Median Candidate Count:      {np.median(counts):.1f}")
+    print(f"P90 Candidate Count:         {np.percentile(counts, 90):.1f}")
+    print(f"P95 Candidate Count:         {np.percentile(counts, 95):.1f}")
+    print(f"P99 Candidate Count:         {np.percentile(counts, 99):.1f}")
+    print(f"Max Candidate Count:         {np.max(counts)}")
+    print(f"Zero Candidates Count / Pct: {zero_cands:,} ({zero_cands_pct:.2f}%)")
+    print("=" * 65 + "\n")
 
     if missed_pairs:
         print("SAMPLE MISSED MATCHES (For Diagnosing Blocker Gaps):")
