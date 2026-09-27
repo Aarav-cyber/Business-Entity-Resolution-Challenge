@@ -1,0 +1,6 @@
+{
+  "threshold": 0.43,
+  "calibration_f0.5": 0.9763,
+  "n_positive_pairs": 7638365,
+  "n_negative_pairs": 16668592
+}

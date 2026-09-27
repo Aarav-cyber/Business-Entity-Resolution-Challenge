@@ -34,9 +34,17 @@ train_source{1,2,3}.tsv, test_source{1,2,3}.tsv
          │
          ▼
 [STAGE C] Feature Engineering & Model        (Owner: Riju)
-   - Pairwise string/token/address similarity features
-   - Precision-tuned gradient boosting (LightGBM/XGBoost) classifier
-   - Produces output/matching_results.tsv
+   - Pairwise name (char-bigram Dice + token Jaccard) and address
+     (boilerplate-stripped bigram Dice) similarity, combined into one
+     score: 0.55*name_dice + 0.25*name_jaccard + 0.20*addr_dice
+   - Single threshold calibrated on train_ground_truth.tsv (maximizes
+     F0.5 on positive/sampled-negative pairs) instead of a learned
+     classifier - too few ground-truth pairs survive the train
+     S1/S2/S3 sampling mismatch to train one reliably (see
+     Documentation_template.md)
+   - Produces output/matching_results.tsv, run as:
+       python src/model/train.py --data-dir dataset/train
+       python src/model/infer.py --data-dir dataset/test
          │
          ▼
 [STAGE D] Evaluation & Submission Packaging (Owner: Anjali)
