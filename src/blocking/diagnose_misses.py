@@ -135,21 +135,23 @@ def diagnose_missed_matches(
             s2_df = normalize_source(pd.read_csv(s2_path, sep="\t", dtype=str, keep_default_na=False))
             s3_df = normalize_source(pd.read_csv(s3_path, sep="\t", dtype=str, keep_default_na=False))
 
-        name_col = "business_name_clean" if "business_name_clean" in s1_df.columns else "business_name"
-        addr_col = "address_clean" if "address_clean" in s1_df.columns else "address"
-        country_col = "country_iso" if "country_iso" in s1_df.columns else "country"
+        for df in [s1_df, s2_df, s3_df]:
+            if "entity_id" not in df.columns:
+                continue
 
-        for df, id_col in [(s1_df, "source1_entity_id"), (s2_df, "source2_entity_id"), (s3_df, "source3_entity_id")]:
-            if id_col in df.columns:
-                for _, row in df.iterrows():
-                    eid = str(row[id_col]).strip()
-                    entity_records[eid] = {
-                        "name": str(row.get(name_col, "")).strip(),
-                        "address": str(row.get(addr_col, "")).strip(),
-                        "country": str(row.get(country_col, "")).strip(),
-                        "city": str(row.get("city", "")).strip(),
-                        "raw_row": row.to_dict(),
-                    }
+            for _, row in df.iterrows():
+                eid = str(row["entity_id"]).strip()
+
+                entity_records[eid] = {
+                    "name": str(row.get("business_name_clean", "")).strip(),
+                    "name_with_suffix": str(row.get("business_name_clean_with_suffix", "")).strip(),
+                    "address": str(row.get("business_address_clean", "")).strip(),
+                    "landmark": str(row.get("landmark", "")).strip(),
+                    "country": str(row.get("country", "")).strip(),
+                    "city": str(row.get("city", "")).strip(),
+                    "source": str(row.get("source", "")).strip(),
+                    "raw_row": row.to_dict(),
+                }
 
     if not entity_records:
         print("\nNote: Source data files not provided or empty.")
@@ -207,7 +209,7 @@ def diagnose_missed_matches(
             cause = "EXACT_NAME_CAPPED_OR_UNSCORED"
         elif len(shared_tokens) > 0:
             # Word tokens match, but was blocked out (high DF, token cap >100, or trimmed score)
-            cause = "SHARED_TOKEN_CAPPED_OUT"
+            cause = "SHARED_NAME_TOKEN_BUT_NOT_RETRIEVED"
         elif char_jaccard >= 0.35:
             # High subword similarity, but zero shared complete tokens (typo / inflection / spelling variation)
             cause = "ZERO_TOKEN_OVERLAP_HIGH_CHAR_SIM"
@@ -221,11 +223,16 @@ def diagnose_missed_matches(
         diagnostic_rows.append({
             "s1_id": s1_id,
             "target_id": target_id,
+            "target_source": target_rec.get("source", ""),
             "primary_cause": cause,
             "s1_name": s1_name,
             "target_name": target_name,
             "s1_country": s1_country,
             "target_country": target_country,
+            "s1_address": s1_rec.get("address", ""),
+            "target_address": target_rec.get("address", ""),
+            "s1_landmark": s1_rec.get("landmark", ""),
+            "target_landmark": target_rec.get("landmark", ""),
             "shared_name_tokens": ",".join(sorted(shared_tokens)),
             "char_ngram_jaccard": round(char_jaccard, 3),
             "shared_addr_tokens": ",".join(sorted(shared_addr_tokens)),
